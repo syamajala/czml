@@ -85,6 +85,7 @@ def class_property(cls, name, doc=None):
 
 from pytz import utc
 
+
 def datetime_property(name, allow_offset=False, doc=None):
     """Generates a datetime property that handles strings and timezones.
     """
@@ -118,6 +119,7 @@ def datetime_property(name, allow_offset=False, doc=None):
 
     return property(getter, setter, doc=doc)
 
+
 # Many classes will have material and position properties.
 material_property = lambda x: class_property(Material, x)
 position_property = lambda x: class_property(Position, x)
@@ -146,7 +148,10 @@ class _CZMLBaseObject(object):
     def data(self):
         d = {}
         for attr in self.properties:
-            a = getattr(self, attr)
+            if hasattr(self, attr):
+                a = getattr(self, attr)
+            else:
+                a = None
             if a is not None:
                 # These classes have a data method that should be called.
                 if isinstance(a, (_CZMLBaseObject, _Colors,
@@ -211,6 +216,28 @@ class CZML(_CZMLBaseObject):
             self.packets.append(packet)
         else:
             raise ValueError
+
+
+class Description(_CZMLBaseObject):
+    string = None
+    reference = None
+
+    def __init__(self, string=None, reference=None):
+        self.string = string
+        self.reference = reference
+
+    def data(self):
+        d = {}
+        if self.string:
+            d['string'] = self.string
+        if self.reference:
+            d['reference'] = self.reference
+        return d
+
+    def load(self, data):
+        self.string = data.get('string', None)
+        self.reference = data.get('reference', None)
+
 
 class _DateTimeAware(_CZMLBaseObject):
     """ A baseclass for Date time aware objects """
@@ -343,14 +370,26 @@ class Position(_DateTimeAware):
     _cartesian = None
     _cartographicRadians = None
     _cartographicDegrees = None
+    _epoch = None
     interpolationAlgorithm = None
     interpolationDegree = None
 
     def __init__(self, **kwargs):
         self._properties += ('cartesian', 'cartographicRadians',
                              'cartographicDegrees', 'interpolationAlgorithm',
-                             'interpolationDegree', 'referenceFrame')
+                             'interpolationDegree', 'referenceFrame', 'epoch')
         super(Position, self).__init__(**kwargs)
+
+    @property
+    def epoch(self):
+        return self._epoch
+
+    @epoch.setter
+    def epoch(self, geom):
+        if geom is not None:
+            self._epoch = geom
+        else:
+            self._epoch = None
 
     @property
     def cartesian(self):
@@ -452,6 +491,7 @@ class Radii(_DateTimeAware):
     def load(self, data):
         super(Radii, self).load(data)
         self.cartesian = data.get('cartesian', None)
+
 
 class _Color(object):
     r = g = b = a = 0
@@ -573,6 +613,7 @@ class Color(_DateTimeAware):
         else:
             self._rgbaf = _Colors(colors, num=float)
 
+
 class Scale(_DateTimeAware):
     """ The scale of the billboard. The scale is multiplied with the
     pixel size of the billboard's image. For example, if the scale is 2.0,
@@ -633,6 +674,7 @@ class Scale(_DateTimeAware):
             d['number'] = self.number
         return d
 
+
 class Billboard(_CZMLBaseObject):
     """A billboard, or viewport-aligned image. The billboard is positioned
     in the scene by the position property.
@@ -654,8 +696,6 @@ class Billboard(_CZMLBaseObject):
     _properties = ('show','image','color','scale')
 
 
-
-
 class Clock(_CZMLBaseObject):
     """The clock settings for the entire data set.
        Only valid on the document object."""
@@ -663,9 +703,17 @@ class Clock(_CZMLBaseObject):
     interval = None
 
     _currentTime = None
+    # currentTime = class_property(Number, 'currentTime');
+
     _multiplier = None
+    # multiplier = class_property(Number, 'multiplier');
+
     _range = None
+    # range = class_property(Number, 'range');
+
     _step = None
+    # step = class_property(Number, 'step');
+
     _properties = ('currentTime', 'multiplier', 'interval', 'range', 'step',)
 
 
@@ -804,7 +852,6 @@ class Positions(_CZMLBaseObject):
         return d
 
 
-
 class Orientation(_DateTimeAware):
     """The orientation of the object in the world.
     The orientation has no direct visual representation, but it is used
@@ -888,9 +935,6 @@ class Point(_CZMLBaseObject):
         else:
             raise TypeError
 
-
-
-
     def data(self):
         d = {}
         if self.show:
@@ -914,7 +958,6 @@ class Point(_CZMLBaseObject):
         self.outlineColor = data.get('outlineColor', None)
         self.pixelSize = data.get('pixelSize', None)
         self.outlineWidth = data.get('outlineWidth', None)
-
 
 
 class Label(_CZMLBaseObject):
@@ -997,7 +1040,10 @@ class PolylineOutline(_CZMLBaseObject):
     _color = None
     _outlineColor = None
     _outlineWidth = None
-    _properties = ('color', 'outlineColor', 'outlineWidth',)
+    ############################
+    _polylineGlow = None
+    ###########################
+    _properties = ('color', 'outlineColor', 'outlineWidth', 'polylineGlow')
 
 
 class Material(_CZMLBaseObject):
@@ -1054,6 +1100,9 @@ class Path(_DateTimeAware, _CZMLBaseObject):
 
     _position = None
     position = class_property(Position, 'position');
+
+    _description = None
+    description = class_property(Description, 'description')
 
     _properties = ('show', 'width', 'leadTime', 'trailTime',
                    'resolution', 'material', 'position')
@@ -1181,6 +1230,7 @@ class Ellipsoid(_DateTimeAware):
         self.material = data.get('material', None)
         self.radii = data.get('radii', None)
 
+
 class Cone(_DateTimeAware, _CZMLBaseObject):
     """ A cone starts at a point or apex and extends in a circle of
     directions which all have the same angular separation from the Z-axis
@@ -1243,6 +1293,7 @@ class Cone(_DateTimeAware, _CZMLBaseObject):
             # TODO: Finish entering these.
         return d
 
+
 class Pyramid(_CZMLBaseObject):
     """A pyramid starts at a point or apex and extends in a specified list
     of directions from the apex. Each pair of directions forms a face of
@@ -1255,25 +1306,6 @@ class Camera(_CZMLBaseObject):
     """A camera."""
     pass
 
-class Description(_CZMLBaseObject):
-    string = None
-    reference = None
-    
-    def __init__(self, string=None, reference=None):
-        self.string = string
-        self.reference = reference
-    
-    def data(self):
-        d = {}
-        if self.string:
-            d['string'] = self.string
-        if self.reference:
-            d['reference'] = self.reference
-        return d
-    
-    def load(self, data):
-        self.string = data.get('string', None)
-        self.reference = data.get('reference', None)
 
 class CZMLPacket(_CZMLBaseObject):
     """  A CZML packet describes the graphical properties for a single
@@ -1298,7 +1330,7 @@ class CZMLPacket(_CZMLBaseObject):
     # like "Buffering..." while it waits to receive the data. The property
     # can be a single string specifying a single interval, or an array
     # of strings representing intervals.
-    availability = None
+    _availability = None
 
     # The CZML version being written. Only valid on the document object.
     _version = None
@@ -1352,10 +1384,10 @@ class CZMLPacket(_CZMLBaseObject):
     # A pyramid. A pyramid starts at a point or apex and extends in a
     # specified list of directions from the apex. Each pair of directions
     # forms a face of the pyramid. The pyramid may be capped at a radial limit.
-    pyramid = None
+    _pyramid = None
 
     # A camera.
-    camera = None
+    _camera = None
 
     # An ellipsoid
     _ellipsoid = None
@@ -1369,7 +1401,8 @@ class CZMLPacket(_CZMLBaseObject):
     # try adding description
     _description = None
 
-    _properties = ('id', 'description', 'version', 'availability', 'billboard', 'clock', 'position', 'label', 'point', 'positions', 'polyline', 'polygon', 'path', 'orientation', 'ellipse', 'ellipsoid', 'cone', 'pyramid')
+    _name = None
+    _properties = ('id', 'description', 'name', 'version', 'availability', 'billboard', 'clock', 'position', 'label', 'point', 'positions', 'polyline', 'polygon', 'path', 'orientation', 'ellipse', 'ellipsoid', 'cone', 'pyramid')
 
     # TODO: Figure out how to set __doc__ from here.
     # position = class_property(Position, 'position')
@@ -1377,8 +1410,11 @@ class CZMLPacket(_CZMLBaseObject):
     @property
     def description(self):
       if self._description is not None:
-        return self._description.data()
-    
+        if isinstance(self._description, str):
+            return self._description
+        elif isinstance(self._description, Description):
+            return self._description.data()
+
     @description.setter
     def description(self, description):
         if isinstance(description, Description):
@@ -1389,6 +1425,13 @@ class CZMLPacket(_CZMLBaseObject):
             self._description = d
         elif description is None:
             self._description = None
+        #################
+        if isinstance(description, str):
+            self._description = description
+        elif isinstance(description, basestring):
+            self._description = description
+        #################
+
         else:
             raise TypeError
     
@@ -1627,15 +1670,18 @@ class CZMLPacket(_CZMLBaseObject):
     def data(self):
         d = {}
         for property_name in self._properties:
-            property_value = getattr(self, property_name)
+            property_value = getattr(self, '_' + property_name)
             if property_value is not None:
-                d[property_name] = property_value
+                if issubclass(property_value.__class__, _CZMLBaseObject) or issubclass(property_value.__class__, _CZMLBaseObject):
+                    d[property_name] = property_value.data()
+                else:
+                    d[property_name] = property_value
         return d
 
     def load(self, data):
         for property_name in self._properties:
             property_value = data.get(property_name, None)
             if property_value is not None:
-                setattr(self, property_name, property_value)
+                setattr(self, "_" + property_name, property_value)
 
 

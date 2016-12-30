@@ -350,7 +350,6 @@ class Number(_DateTimeAware):
         return super(Number, self).data()
 
 
-
 class Position(_DateTimeAware):
     """ The position of the object in the world. The position has no
     direct visual representation, but it is used to locate billboards,
@@ -703,16 +702,12 @@ class Clock(_CZMLBaseObject):
     interval = None
 
     _currentTime = None
-    # currentTime = class_property(Number, 'currentTime');
 
     _multiplier = None
-    # multiplier = class_property(Number, 'multiplier');
 
     _range = None
-    # range = class_property(Number, 'range');
 
     _step = None
-    # step = class_property(Number, 'step');
 
     _properties = ('currentTime', 'multiplier', 'interval', 'range', 'step',)
 
@@ -1601,7 +1596,6 @@ class CZMLPacket(_CZMLBaseObject):
         else:
             raise TypeError
 
-
     @property
     def polyline(self):
         """A polyline, which is a line in the scene composed of multiple segments.
@@ -1666,6 +1660,37 @@ class CZMLPacket(_CZMLBaseObject):
             self._cone = None
         else:
             raise TypeError
+
+    @property
+    def availability(self):
+        """The set of time intervals over which data for an object is available. The property can
+        be a single string specifying a single interval, or an array of strings representing
+        intervals. A later Cesium packet can update this availability if it changes or is found to
+        be incorrect. For example, an SGP4 propagator may initially report availability for all
+        time, but then later the propagator throws an exception and the availability can be
+        adjusted to end at that time. If this optional property is not present, the object is
+        assumed to be available for all time. Availability is scoped to a particular CZML stream,
+        so two different streams can list different availability for a single object. Within a
+        single stream, the last availability stated for an object is the one in effect and any
+        availabilities in previous packets are ignored. If an object is not available at a time,
+        the client will not draw that object.
+        """
+        if self._availability is not None:
+            if isinstance(self._availability, str):
+                return self._availability
+            # elif isinstance(self._availability, TimeIntervalCollection):
+            #     return self._availability.data()
+
+    @availability.setter
+    def availability(self, availability):
+        if isinstance(availability, str):
+            self._availability = availability
+        # elif isinstance(availability, list):
+        #     t = TimeIntervalCollection()
+        #     t.load(availability)
+        #     self._availability = t
+        # elif isinstance(availability, TimeIntervalCollection):
+        #     self._availability = availability
 
     def data(self):
         d = {}

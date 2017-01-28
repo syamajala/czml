@@ -85,7 +85,6 @@ def class_property(cls, name, doc=None):
 
 from pytz import utc
 
-
 def datetime_property(name, allow_offset=False, doc=None):
     """Generates a datetime property that handles strings and timezones.
     """
@@ -119,7 +118,6 @@ def datetime_property(name, allow_offset=False, doc=None):
 
     return property(getter, setter, doc=doc)
 
-
 # Many classes will have material and position properties.
 material_property = lambda x: class_property(Material, x)
 position_property = lambda x: class_property(Position, x)
@@ -148,10 +146,7 @@ class _CZMLBaseObject(object):
     def data(self):
         d = {}
         for attr in self.properties:
-            if hasattr(self, attr):
-                a = getattr(self, attr)
-            else:
-                a = None
+            a = getattr(self, attr, None)
             if a is not None:
                 # These classes have a data method that should be called.
                 if isinstance(a, (_CZMLBaseObject, _Colors,
@@ -216,28 +211,6 @@ class CZML(_CZMLBaseObject):
             self.packets.append(packet)
         else:
             raise ValueError
-
-
-class Description(_CZMLBaseObject):
-    string = None
-    reference = None
-
-    def __init__(self, string=None, reference=None):
-        self.string = string
-        self.reference = reference
-
-    def data(self):
-        d = {}
-        if self.string:
-            d['string'] = self.string
-        if self.reference:
-            d['reference'] = self.reference
-        return d
-
-    def load(self, data):
-        self.string = data.get('string', None)
-        self.reference = data.get('reference', None)
-
 
 class _DateTimeAware(_CZMLBaseObject):
     """ A baseclass for Date time aware objects """
@@ -348,6 +321,7 @@ class Number(_DateTimeAware):
             isinstance(data['number'], (int, float, str, long))):
             return data['number']
         return super(Number, self).data()
+
 
 
 class Position(_DateTimeAware):
@@ -491,7 +465,6 @@ class Radii(_DateTimeAware):
         super(Radii, self).load(data)
         self.cartesian = data.get('cartesian', None)
 
-
 class _Color(object):
     r = g = b = a = 0
     t = None
@@ -612,7 +585,6 @@ class Color(_DateTimeAware):
         else:
             self._rgbaf = _Colors(colors, num=float)
 
-
 class Scale(_DateTimeAware):
     """ The scale of the billboard. The scale is multiplied with the
     pixel size of the billboard's image. For example, if the scale is 2.0,
@@ -673,7 +645,6 @@ class Scale(_DateTimeAware):
             d['number'] = self.number
         return d
 
-
 class Billboard(_CZMLBaseObject):
     """A billboard, or viewport-aligned image. The billboard is positioned
     in the scene by the position property.
@@ -695,6 +666,8 @@ class Billboard(_CZMLBaseObject):
     _properties = ('show','image','color','scale')
 
 
+
+
 class Clock(_CZMLBaseObject):
     """The clock settings for the entire data set.
        Only valid on the document object."""
@@ -702,13 +675,9 @@ class Clock(_CZMLBaseObject):
     interval = None
 
     _currentTime = None
-
     _multiplier = None
-
     _range = None
-
     _step = None
-
     _properties = ('currentTime', 'multiplier', 'interval', 'range', 'step',)
 
 
@@ -847,6 +816,7 @@ class Positions(_CZMLBaseObject):
         return d
 
 
+
 class Orientation(_DateTimeAware):
     """The orientation of the object in the world.
     The orientation has no direct visual representation, but it is used
@@ -930,6 +900,9 @@ class Point(_CZMLBaseObject):
         else:
             raise TypeError
 
+
+
+
     def data(self):
         d = {}
         if self.show:
@@ -953,6 +926,7 @@ class Point(_CZMLBaseObject):
         self.outlineColor = data.get('outlineColor', None)
         self.pixelSize = data.get('pixelSize', None)
         self.outlineWidth = data.get('outlineWidth', None)
+
 
 
 class Label(_CZMLBaseObject):
@@ -1035,9 +1009,7 @@ class PolylineOutline(_CZMLBaseObject):
     _color = None
     _outlineColor = None
     _outlineWidth = None
-    ############################
     _polylineGlow = None
-    ###########################
     _properties = ('color', 'outlineColor', 'outlineWidth', 'polylineGlow')
 
 
@@ -1070,6 +1042,26 @@ class Material(_CZMLBaseObject):
     polylineOutline = class_property(PolylineOutline, 'polylineOutline',
                                      doc="""Colors the line with a color and outline.
                                      """)
+
+class Description(_CZMLBaseObject):
+    string = None
+    reference = None
+
+    def __init__(self, string=None, reference=None):
+        self.string = string
+        self.reference = reference
+
+    def data(self):
+        d = {}
+        if self.string:
+            d['string'] = self.string
+        if self.reference:
+            d['reference'] = self.reference
+        return d
+
+    def load(self, data):
+        self.string = data.get('string', None)
+        self.reference = data.get('reference', None)
 
 
 class Path(_DateTimeAware, _CZMLBaseObject):
@@ -1234,7 +1226,6 @@ class Ellipsoid(_DateTimeAware):
         self.material = data.get('material', None)
         self.radii = data.get('radii', None)
 
-
 class Cone(_DateTimeAware, _CZMLBaseObject):
     """ A cone starts at a point or apex and extends in a circle of
     directions which all have the same angular separation from the Z-axis
@@ -1296,7 +1287,6 @@ class Cone(_DateTimeAware, _CZMLBaseObject):
                     d[attr] = a
             # TODO: Finish entering these.
         return d
-
 
 class Pyramid(_CZMLBaseObject):
     """A pyramid starts at a point or apex and extends in a specified list
@@ -1429,13 +1419,8 @@ class CZMLPacket(_CZMLBaseObject):
             self._description = d
         elif description is None:
             self._description = None
-        #################
-        if isinstance(description, str):
+        if isinstance(description, basestring):
             self._description = description
-        elif isinstance(description, basestring):
-            self._description = description
-        #################
-
         else:
             raise TypeError
     
@@ -1604,6 +1589,7 @@ class CZMLPacket(_CZMLBaseObject):
             self._positions = None
         else:
             raise TypeError
+
 
     @property
     def polyline(self):

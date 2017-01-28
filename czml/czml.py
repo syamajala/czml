@@ -1128,6 +1128,8 @@ class Polygon(_DateTimeAware, _CZMLBaseObject):
     fill = None
     outline = None
     perPositionHeight = None
+    closeTop = None
+    closeBottom = None
 
     _height = None
     height = class_property(Number, 'height')
@@ -1144,6 +1146,9 @@ class Polygon(_DateTimeAware, _CZMLBaseObject):
     _outlineColor = None
     outlineColor = class_property(Color, 'outlineColor')
 
+    _outlineWidth = None
+    outlineWidth = class_property(Number, 'outlineWidth')
+
     _material = None
     material = class_property(Material, 'material')
 
@@ -1152,7 +1157,8 @@ class Polygon(_DateTimeAware, _CZMLBaseObject):
 
     _properties = ('show', 'fill', 'height', 'outline', 'stRotation',
                    'granularity', 'extrudedHeight', 'perPositionHeight',
-                   'outlineColor', 'material', 'positions')
+                   'outlineColor', 'outlineWidth', 'material', 'positions',
+                   'closeTop', 'closeBottom')
 
 
 class Ellipse(_DateTimeAware, _CZMLBaseObject):
@@ -1190,6 +1196,9 @@ class Ellipse(_DateTimeAware, _CZMLBaseObject):
     _outlineColor = None
     outlineColor = class_property(Color, 'outlineColor')
 
+    _outlineWidth = None
+    outlineWidth = class_property(Number, 'outlineWidth')
+
     _material = None
     material = class_property(Material, 'material')
 
@@ -1198,7 +1207,7 @@ class Ellipse(_DateTimeAware, _CZMLBaseObject):
 
     _properties = ('show', 'fill', 'outline', 'height', 'rotation', 'stRotation',
                    'granularity', 'extrudedHeight', 'semiMajorAxis', 'semiMinorAxis',
-                   'numberOfVerticalLines', 'outlineColor', 'material', 'position')
+                   'numberOfVerticalLines', 'outlineColor', 'outlineWidth', 'material', 'position')
 
 
 class Ellipsoid(_DateTimeAware):
